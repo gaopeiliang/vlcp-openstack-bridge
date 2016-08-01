@@ -38,7 +38,6 @@ class Controller(object):
     def createlogicalnetwork(self,physicalnetwork,physicalnetworktype,segid,network):
         
         n = dict()
-        n.update(network)
         if physicalnetwork:
             physicalnetworkid = self.providermap[physicalnetwork]
         else:
@@ -46,28 +45,20 @@ class Controller(object):
                 physicalnetworkid = self.tenantmap[physicalnetworktype]
 
         n['physicalnetwork'] = physicalnetworkid
-
-        # delete some attr that controller not care
-        del n['status']
-        del n['admin_state_up']
-        del n['tenant_id']
-        del n['vlan_transparent']
-        del n['port_security_enabled']
-        del n[providernet.PHYSICAL_NETWORK]
-        del n[providernet.SEGMENTATION_ID]
-        del n[providernet.NETWORK_TYPE]
-        del n['shared']
-        # viperflow only support one subnet, so get first one
-        if n['subnets']:
-            n['subnet'] = network.get('subnets')[0]
-
-        del n['subnets']
+        n['name'] = network['name']
+        n['admin_state_up'] = network['admin_state_up']
+        n['mtu'] = network['mtu']
         
         if physicalnetworktype == 'vlan':
             n['vlanid'] = segid
         else:
             n['vni'] = segid
 
+
+        # viperflow only support one subnet, so get first one
+        if network['subnets']:
+            n['subnet'] = network.get('subnets')[0]
+        
         LOG.info(" --- createlogicalnetwork -- %r",n)
         param = urllib.urlencode(n)
         LOG.info(" -- param -- %r",param)
