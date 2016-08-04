@@ -48,6 +48,7 @@ class Controller(object):
         n['name'] = network['name']
         n['admin_state_up'] = network['admin_state_up']
         n['mtu'] = network['mtu']
+        n['id'] = netwoork['id']
         
         if physicalnetworktype == 'vlan':
             n['vlanid'] = segid
