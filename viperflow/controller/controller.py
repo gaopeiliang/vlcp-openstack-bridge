@@ -115,4 +115,60 @@ class Controller(object):
         param = urllib.urlencode({"id":portid})
         url = self.conn + "/viperflow/deletelogicalport?%s" % param
         urllib2.urlopen(url,timeout=self.timeout).read()
+    
+    def createsubnet(self,subnet):
+
+        s = dict()
+
+        s['id'] = subnet['id']
+        s['name'] = subnet['name']
+        s['logicalnetwork'] = subnet['network_id']
+        
+        s['cidr'] = subnet['cidr']
+        #openstack have multi allocated segment ip ,
+        #now controller support only one segment,
+        #so get first segment from openstack
+        s['allocated_start'] = subnet['allocation_pools'][0]['start']
+        s['allocated_end'] = subnet['allocation_pools'][0]['end']
+        
+        s['gateway'] = subnet['gateway_ip']
+        s['enable_dhcp'] = subnet['enable_dhcp']
+        
+        s['dns_nameservers'] = subnet['dns_nameservers']
+        s['host_routes'] = subnet['host_routes']
+
+        param = urllib.urlencode(s)
+        url = self.conn + "viperflow/createsubnet?%s" % param
+        urllib2.urlopen(url,timeout=self.timeout).read()
+    
+    def updatesubnet(self,subnet):
+
+        s = dict()
+
+        s['id'] = subnet['id']
+        s['name'] = subnet['name']
+        s['logicalnetwork'] = subnet['network_id']
+        
+        s['cidr'] = subnet['cidr']
+        #openstack have multi allocated segment ip ,
+        #now controller support only one segment,
+        #so get first segment from openstack
+        s['allocated_start'] = subnet['allocation_pools'][0]['start']
+        s['allocated_end'] = subnet['allocation_pools'][0]['end']
+        
+        s['gateway'] = subnet['gateway_ip']
+        s['enable_dhcp'] = subnet['enable_dhcp']
+        
+        s['dns_nameservers'] = subnet['dns_nameservers']
+        s['host_routes'] = subnet['host_routes']
+
+        param = urllib.urlencode(s)
+        url = self.conn + "viperflow/updatesubnet?%s" % param
+        urllib2.urlopen(url,timeout=self.timeout).read()
+    
+    def deletesubnet(self,subnetid):
+        
+        param = urllib.urlencode({"id":subnetid})
+        url = self.conn + "/viperflow/deletesubnet?%s" % param
+        urllib2.urlopen(url,timeout=self.timeout).read()
 

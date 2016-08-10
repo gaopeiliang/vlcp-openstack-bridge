@@ -95,3 +95,20 @@ class ViperflowMechanismDriver(driver_api.MechanismDriver):
             context.set_binding(segment_to_bind[driver_api.ID],
                         self.vif_type,
                         self.vif_details)
+    
+    def create_subnet_postcommit(self,context):
+        subnet = context.current
+        LOG.info(" -- create_subnet_postcommit -- %r",subnet)
+        self.controller.createsubnet(subnet)
+
+    def update_subnet_postcommit(self,context):
+        subnet = context.current
+        original_subnet = context.original
+        LOG.info(" -- update_subnet_postcommit -- %r",subnet)
+        LOG.info(" -- update_subnet_postcommit original -- %r",original_subnet)
+        self.controller.updatesubnet(subnet)
+    
+    def delete_subnet_postcommit(self,context):
+        subnet = context.current
+        LOG.info(" -- delete_subnet_postcommit -- %r",subnet)
+        self.controller.deletesubnet(subnet['id'])
