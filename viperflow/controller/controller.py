@@ -48,7 +48,7 @@ class Controller(object):
         n['name'] = network['name']
         n['admin_state_up'] = network['admin_state_up']
         n['mtu'] = network['mtu']
-        n['id'] = netwoork['id']
+        n['id'] = network['id']
         
         if physicalnetworktype == 'vlan':
             n['vlanid'] = segid
@@ -91,6 +91,9 @@ class Controller(object):
         
         # now we do not support security group , and l3
         # so we ignore ip , subnet , security group info
+        if port['fixed_ips']:
+            p['subnet'] = port['fixed_ips']['subnet_id']
+            p['ip_address'] = port['fixed_ips']['ip_address']
 
         param = urllib.urlencode(p)
         url = self.conn + "/viperflow/createlogicalport?%s" % param
@@ -138,7 +141,7 @@ class Controller(object):
         s['host_routes'] = subnet['host_routes']
 
         param = urllib.urlencode(s)
-        url = self.conn + "viperflow/createsubnet?%s" % param
+        url = self.conn + "/viperflow/createsubnet?%s" % param
         urllib2.urlopen(url,timeout=self.timeout).read()
     
     def updatesubnet(self,subnet):
@@ -163,7 +166,7 @@ class Controller(object):
         s['host_routes'] = subnet['host_routes']
 
         param = urllib.urlencode(s)
-        url = self.conn + "viperflow/updatesubnet?%s" % param
+        url = self.conn + "/viperflow/updatesubnet?%s" % param
         urllib2.urlopen(url,timeout=self.timeout).read()
     
     def deletesubnet(self,subnetid):
