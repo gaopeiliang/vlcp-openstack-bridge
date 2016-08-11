@@ -31,3 +31,6 @@ def getprovidermap():
 
 def gettenantmap():
     return cfg.CONF.viperflow.tenant_physicalnet_map
+
+def getmetadataaddress():
+    return "169.254.169.254/32"

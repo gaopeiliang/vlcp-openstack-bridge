@@ -72,7 +72,7 @@ class ViperflowMechanismDriver(driver_api.MechanismDriver):
         port = context.current
 
         LOG.info(" -- delete port = %r",port)
-        self.controller.deletelogicalport(port['id'])
+        self.controller.deletelogicalport(port)
     def update_port_postcommit(self,context):
         LOG.info(" -- update_port_postcommit --")
         port = context.current
@@ -106,7 +106,7 @@ class ViperflowMechanismDriver(driver_api.MechanismDriver):
         original_subnet = context.original
         LOG.info(" -- update_subnet_postcommit -- %r",subnet)
         LOG.info(" -- update_subnet_postcommit original -- %r",original_subnet)
-        self.controller.updatesubnet(subnet)
+        self.controller.updatesubnet(subnet,original_subnet)
     
     def delete_subnet_postcommit(self,context):
         subnet = context.current

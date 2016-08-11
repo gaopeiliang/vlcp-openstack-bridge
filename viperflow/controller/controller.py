@@ -3,6 +3,7 @@ import urllib2
 
 from oslo_log import log
 from viperflow.common import config
+from viperflow.controller import utils
 from neutron.extensions import providernet
 
 LOG = log.getLogger(__name__)
@@ -89,11 +90,31 @@ class Controller(object):
         p['name'] = port['name']
         p['mac_address'] = port['mac_address']
         
-        # now we do not support security group , and l3
-        # so we ignore ip , subnet , security group info
         if port['fixed_ips']:
             p['subnet'] = port['fixed_ips']['subnet_id']
             p['ip_address'] = port['fixed_ips']['ip_address']
+            
+            # when create dhcp port , we should add static route
+            # to metadata server on dhcp server
+            if port['device_owner'] == "network:dhcp":
+                
+                staticroute = [config.getmetadataaddress(),p['ip_address']]
+
+                # first get subnet routes info, add all
+                subnets = self.listsubnet(id = p['subnet'])
+                
+                # {subnetid: routes,subnetid2:routes}
+                routes = utils.get_host_routes_from_subnets(subnets)[p['subnet']]
+                
+                if staticroute not in routes:
+                    routes.append(staticroute)
+                    
+                    s = dict()
+                    s['id'] = p['subnet']
+                    s['host_routes'] = routes
+                    
+                    self._updatesubnet(**s)
+
 
         param = urllib.urlencode(p)
         url = self.conn + "/viperflow/createlogicalport?%s" % param
@@ -112,8 +133,34 @@ class Controller(object):
         url = self.conn + "/viperflow/updatelogicalport?%s" % param
 
         urllib2.urlopen(url,timeout=self.timeout).read()
-    def deletelogicalport(self,portid):
+    def deletelogicalport(self,port):
         LOG.info("---- deletelogicalport ---")
+        portid = port['id']
+
+        if port['fixed_ips']:
+            p['subnet'] = port['fixed_ips']['subnet_id']
+            p['ip_address'] = port['fixed_ips']['ip_address']
+            
+            # when delete dhcp port , we should remove static route
+            # to metadata server on dhcp server
+            if port['device_owner'] == "network:dhcp":
+                
+                staticroute = [config.getmetadataaddress(),p['ip_address']]
+
+                # first get subnet routes info, add all
+                subnets = self.listsubnet(id = p['subnet'])
+                
+                # {subnetid: routes,subnetid2:routes}
+                routes = utils.get_host_routes_from_subnets(subnets)[p['subnet']]
+                
+                if staticroute in routes:
+                    routes.remove(staticroute)
+                    
+                    s = dict()
+                    s['id'] = p['subnet']
+                    s['host_routes'] = routes
+                    
+                    self._updatesubnet(**s)
 
         param = urllib.urlencode({"id":portid})
         url = self.conn + "/viperflow/deletelogicalport?%s" % param
@@ -138,13 +185,27 @@ class Controller(object):
         s['enable_dhcp'] = subnet['enable_dhcp']
         
         s['dns_nameservers'] = subnet['dns_nameservers']
-        s['host_routes'] = subnet['host_routes']
+
+        routes = []
+        for item in subnet['host_routes']:
+            destination = item['destination']
+            nexthop = item['nexthop']
+            
+            #
+            # not allow add metadata address static route  
+            #
+            if destination == config.getmetadataaddress():
+                continue
+            
+            routes.append([destination,nexthop])
+        
+        s['host_routes'] = routes
 
         param = urllib.urlencode(s)
         url = self.conn + "/viperflow/createsubnet?%s" % param
         urllib2.urlopen(url,timeout=self.timeout).read()
     
-    def updatesubnet(self,subnet):
+    def updatesubnet(self,subnet,origin_subnet):
 
         s = dict()
 
@@ -152,7 +213,9 @@ class Controller(object):
         s['name'] = subnet['name']
         s['logicalnetwork'] = subnet['network_id']
         
-        s['cidr'] = subnet['cidr']
+        # subnet is not allowd update cidr
+        #s['cidr'] = subnet['cidr']
+        
         #openstack have multi allocated segment ip ,
         #now controller support only one segment,
         #so get first segment from openstack
@@ -163,15 +226,58 @@ class Controller(object):
         s['enable_dhcp'] = subnet['enable_dhcp']
         
         s['dns_nameservers'] = subnet['dns_nameservers']
-        s['host_routes'] = subnet['host_routes']
 
-        param = urllib.urlencode(s)
+        #
+        #   here means update host_routes, first get routes 
+        #   add dhcp metadata static routes
+        #
+        if origin_subnet['host_routes'] != subnet['host_routes']:
+            
+            newroutes = []
+            for item in subnet['host_routes']:
+                destination = item["destination"]
+                nexthop = item['nexthop']
+
+                if destination == config.getmetadataaddress():
+                    continue
+                
+                newroutes.append([destination,nexthop])
+            
+            
+            # find metadata static route , append to newroute
+            subnets = self.listsubnet(id = s['id']) 
+            routes = utils.get_host_routes_from_subnets(subnets)[s['id']]
+            
+            for des,nh in routes:
+                if des == config.getmetadataaddress():
+                    newroutes.append([des,nh])
+            
+            s['host_routes'] = newroutes
+             
+        self._updatesubnet(**s)
+    
+    def _updatesubnet(self,**kwargs):
+        
+        param = urllib.urlencode(kwargs)
         url = self.conn + "/viperflow/updatesubnet?%s" % param
         urllib2.urlopen(url,timeout=self.timeout).read()
-    
+
     def deletesubnet(self,subnetid):
         
         param = urllib.urlencode({"id":subnetid})
         url = self.conn + "/viperflow/deletesubnet?%s" % param
         urllib2.urlopen(url,timeout=self.timeout).read()
+    
+    def listsubnet(self,**kwargs):
+        
+        s = dict()
+        s.update(kwargs)
 
+        param = urllib.urlencode(s)
+
+        url = self.conn + "/viperflow/listsubnet?%s" % param
+
+        with urllib2.urlopen(url,timeout=self.timeout) as f:
+            subnets = f.read()
+        
+        return subnets
