@@ -91,8 +91,8 @@ class Controller(object):
         p['mac_address'] = port['mac_address']
         
         if port['fixed_ips']:
-            p['subnet'] = port['fixed_ips']['subnet_id']
-            p['ip_address'] = port['fixed_ips']['ip_address']
+            p['subnet'] = port['fixed_ips'][0]['subnet_id']
+            p['ip_address'] = port['fixed_ips'][0]['ip_address']
             
             # when create dhcp port , we should add static route
             # to metadata server on dhcp server
@@ -111,7 +111,7 @@ class Controller(object):
                     
                     s = dict()
                     s['id'] = p['subnet']
-                    s['host_routes'] = routes
+                    s['host_routes'] = '`' + str(routes) + '`'
                     
                     self._updatesubnet(**s)
 
@@ -138,27 +138,29 @@ class Controller(object):
         portid = port['id']
 
         if port['fixed_ips']:
-            p['subnet'] = port['fixed_ips']['subnet_id']
-            p['ip_address'] = port['fixed_ips']['ip_address']
+            #p['subnet'] = port['fixed_ips'][0]['subnet_id']
+            subnetid = port['fixed_ips'][0]['subnet_id']
+            #p['ip_address'] = port['fixed_ips'][0]['ip_address']
+            ipaddress = port['fixed_ips'][0]['ip_address']
             
             # when delete dhcp port , we should remove static route
             # to metadata server on dhcp server
             if port['device_owner'] == "network:dhcp":
                 
-                staticroute = [config.getmetadataaddress(),p['ip_address']]
+                staticroute = [config.getmetadataaddress(),ipaddress]
 
                 # first get subnet routes info, add all
-                subnets = self.listsubnet(id = p['subnet'])
+                subnets = self.listsubnet(id = subnetid)
                 
                 # {subnetid: routes,subnetid2:routes}
-                routes = utils.get_host_routes_from_subnets(subnets)[p['subnet']]
+                routes = utils.get_host_routes_from_subnets(subnets)[subnetid]
                 
                 if staticroute in routes:
                     routes.remove(staticroute)
                     
                     s = dict()
-                    s['id'] = p['subnet']
-                    s['host_routes'] = routes
+                    s['id'] = subnetid
+                    s['host_routes'] = '`' + routes + '`'
                     
                     self._updatesubnet(**s)
 
@@ -199,7 +201,7 @@ class Controller(object):
             
             routes.append([destination,nexthop])
         
-        s['host_routes'] = routes
+        s['host_routes'] = '`' + routes '`'
 
         param = urllib.urlencode(s)
         url = self.conn + "/viperflow/createsubnet?%s" % param
@@ -275,9 +277,12 @@ class Controller(object):
 
         param = urllib.urlencode(s)
 
-        url = self.conn + "/viperflow/listsubnet?%s" % param
+        url = self.conn + "/viperflow/listsubnets?%s" % param
 
-        with urllib2.urlopen(url,timeout=self.timeout) as f:
-            subnets = f.read()
+        f = urllib2.urlopen(url,timeout=self.timeout)
+        
+        subnets = f.read()
+
+        f.close()
         
         return subnets
