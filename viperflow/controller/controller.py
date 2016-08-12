@@ -160,7 +160,7 @@ class Controller(object):
                     
                     s = dict()
                     s['id'] = subnetid
-                    s['host_routes'] = '`' + routes + '`'
+                    s['host_routes'] = '`' + str(routes) + '`'
                     
                     self._updatesubnet(**s)
 
@@ -201,7 +201,7 @@ class Controller(object):
             
             routes.append([destination,nexthop])
         
-        s['host_routes'] = '`' + routes '`'
+        s['host_routes'] = '`' + str(routes) + '`'
 
         param = urllib.urlencode(s)
         url = self.conn + "/viperflow/createsubnet?%s" % param
@@ -254,7 +254,7 @@ class Controller(object):
                 if des == config.getmetadataaddress():
                     newroutes.append([des,nh])
             
-            s['host_routes'] = newroutes
+            s['host_routes'] = '`' + str(newroutes) + '`'
              
         self._updatesubnet(**s)
     
