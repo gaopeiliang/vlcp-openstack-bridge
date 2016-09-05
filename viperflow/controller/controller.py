@@ -90,6 +90,11 @@ class Controller(object):
         p['name'] = port['name']
         p['mac_address'] = port['mac_address']
         
+		# create router with subnet , it will createlogicalport first ipaddress == gateway
+		# viperflow will auto add this router port, so return here
+		if port['device_owner'] == "network:router_interface":
+			return
+		
         if port['fixed_ips']:
             p['subnet'] = port['fixed_ips'][0]['subnet_id']
             p['ip_address'] = port['fixed_ips'][0]['ip_address']
@@ -128,7 +133,10 @@ class Controller(object):
         p['id'] = port['id']
         p['name'] = port['name']
         p['mac_address'] = port['mac_address']
-
+		
+		if port['device_owner'] == "network:router_interface":
+			return
+			
         param = urllib.urlencode(p)
         url = self.conn + "/viperflow/updatelogicalport?%s" % param
 
@@ -136,7 +144,10 @@ class Controller(object):
     def deletelogicalport(self,port):
         LOG.info("---- deletelogicalport ---")
         portid = port['id']
-
+		
+		if port['device_owner'] == "network:router_interface":
+			return
+		
         if port['fixed_ips']:
             #p['subnet'] = port['fixed_ips'][0]['subnet_id']
             subnetid = port['fixed_ips'][0]['subnet_id']
@@ -286,3 +297,66 @@ class Controller(object):
         f.close()
         
         return subnets
+	
+	def createvirtualrouter(self,router):
+		
+		r = dict()
+		
+		r['id'] = router['id']
+		r['name'] = router['name']
+		r['routes'] = '`' + str(router['routes']) + '`'
+		
+		param = urllib.urlencode(r)
+		
+		url = self.conn + "/vrouterapi/createvirtualrouter?%s" % param
+		
+		urllib2.urlopen(url,timeout=self.timeout).read()
+	
+	def deletevirtualrouter(self,routerid):
+		
+		r = dict()
+		
+		r['id'] = router['id']
+		
+		param = urllib.urlencode(r)
+		
+		url = self.conn + "/vrouterapi/deletevirtualrouter?%s" % param
+		
+		urllib2.urlopen(url,timeout=self.timeout).read()
+		
+	def updatevirtualrouter(self,id,router):
+		
+		r = dict()
+		
+		r['id'] = router['id']
+		
+		param = urllib.urlencode(r)
+		
+		url = self.conn + "/vrouterapi/updatevirtualrouter?%s" % param
+		
+		#urllib2.urlopen(url,timeout = self.timeout).read()
+	
+	def addrouterinterface(self,id,subnet,**kwargs):
+		
+		r = dict()
+		
+		r["router"] = id
+		r["subnet"] = subnet
+		
+		param = urllib.urlencode(r)
+		
+		url = self.conn + "/vrouterapi/addrouterinterface?%s" % param
+		
+		urllib2.urlopen(url,timeout = self.timeout).read()
+	
+	def removerouterinterface(self,id):
+		
+		r = dict()
+		
+		r["id"] = id
+		
+		param = urllib.urlencode(r)
+		
+		url = self.conn + "/vrouterapi/removerouterinterface?%s" % param
+		
+		urllib2.urlopen(url,timeout = self.timeout).read()
