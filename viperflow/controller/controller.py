@@ -317,7 +317,7 @@ class Controller(object):
 
         r = dict()
 
-        r['id'] = router['id']
+        r['id'] = routerid
 
         param = urllib.urlencode(r)
 
@@ -331,11 +331,20 @@ class Controller(object):
 
         r['id'] = router['id']
 
+        route = []
+        if 'route' in router:
+            for r in router['route']:
+                des = r["destination"]
+                nexthop = r["nexthop"]
+                route.append({"ip_prefix":des,"nexthop":nexthop})
+
+        r["route"] = "`" + str(route) + "`"
+
         param = urllib.urlencode(r)
 
         url = self.conn + "/vrouterapi/updatevirtualrouter?%s" % param
 
-        # urllib2.urlopen(url,timeout = self.timeout).read()
+        urllib2.urlopen(url,timeout = self.timeout).read()
 
     def addrouterinterface(self, id, subnet, **kwargs):
 
@@ -350,11 +359,14 @@ class Controller(object):
 
         urllib2.urlopen(url, timeout=self.timeout).read()
 
-    def removerouterinterface(self, id):
+    def removerouterinterface(self, id,subnet,**kwargs):
 
         r = dict()
 
         r["id"] = id
+        r["subnet"] = subnet
+
+        r.update(kwargs)
 
         param = urllib.urlencode(r)
 

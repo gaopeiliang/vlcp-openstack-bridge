@@ -10,9 +10,9 @@ Log = log.getLogger(__name__)
 
 
 class ViperflowL3RouterPlugin(service_base.ServicePluginBase,
-                              common_db_mixin.CommonDBMixin,
-                              extraroute_db.ExtraRoute_dbonly_mixin):
-    supported_extension_aliases = ["router", "extrarouter"]
+                              common_db_mixin.CommonDbMixin,
+                              extraroute_db.ExtraRoute_db_mixin):
+    supported_extension_aliases = ["router", "extraroute"]
 
     def __init__(self):
         Log.info(" ----- start viperflow l3 plugin -----")
@@ -50,7 +50,8 @@ class ViperflowL3RouterPlugin(service_base.ServicePluginBase,
         Log.info("----- update_router ---- original_router %r", original_router)
         Log.info("----- update_router ---- new_router %r", new_router)
 
-        self.controller.updatevirtualrouter(id, router)
+        if original_router['name'] != new_router['name'] or original_router['routes'] != new_router['routes']:
+            self.controller.updatevirtualrouter(id, new_router)
 
         return new_router
 
