@@ -331,14 +331,14 @@ class Controller(object):
 
         r['id'] = router['id']
 
-        route = []
-        if 'route' in router:
-            for r in router['route']:
-                des = r["destination"]
-                nexthop = r["nexthop"]
-                route.append({"ip_prefix":des,"nexthop":nexthop})
+        routes = []
+        if 'routes' in router:
+            for e in router['routes']:
+                des = e["destination"]
+                nexthop = e["nexthop"]
+                routes.append({"ip_prefix":des,"nexthop":nexthop})
 
-        r["route"] = "`" + str(route) + "`"
+        r["routes"] = "`" + str(routes) + "`"
 
         param = urllib.urlencode(r)
 
