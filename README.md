@@ -7,7 +7,7 @@ OpenStack Neutron ML2 plugin for VLCP SDN Controller
 	python setup.py install
 
 
-##Prepare physicalnetwork
+## Prepare physicalnetwork
 Neutron provider network and tenant network map to physicalnetwork with physicalport in vlcp,  so first we should create physicalnetwork and physicalport . do it follow http://vlcp.readthedocs.io/
 
 	provider_physicalnetwork_id = `create physicalnetwork in vlcp`
@@ -17,7 +17,7 @@ Neutron provider network and tenant network map to physicalnetwork with physical
 	physicalnetwork_port = `create physicalnetwork "physicalnetwork_id" physicalnetworkport 'eth1'
 
 
-##config Neutron ml2 plugin
+## config Neutron ml2 plugin
 
 	type_drivers = flat,vxlan,vlan
 	tenant_network_types=vxlan
